@@ -1,0 +1,37 @@
+.adaptive-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 20px;
+}
+
+.chess-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.analysis-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 10px;
+}
+
+.navigation-controls {
+  display: flex;
+  justify-content: center;
+}
+
+.moves-display {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.moves-container {
+  text-align: center;
+}

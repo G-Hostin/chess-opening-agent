@@ -1,0 +1,16 @@
+{
+  "name": "WikiChess",
+  "short_name": "WikiChess",
+  "theme_color": "#B58863",
+  "background_color": "#F0D9B5",
+  "display": "standalone",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "assets/icons/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

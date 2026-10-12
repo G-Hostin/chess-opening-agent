@@ -1,0 +1,136 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <mat-sidenav #sidenav mode="over" closed class="sidenav" position="end">
+    <mat-toolbar color="primary">
+      <!-- <span>Parties de Référence</span> -->
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="sidenav.close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="sidenav-content">
+
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div class="main-content">
+
+      <!-- Toolbar principale -->
+      <mat-toolbar color="primary" class="mat-elevation-z4">
+        <span class="app-title">Chessboard</span>
+
+
+      </mat-toolbar>
+
+ 
+
+      
+
+      <!-- Layout principal -->
+      <div class="adaptive-layout" >
+
+        <!-- Section Échiquier -->
+        <div class="chess-section">
+          <div class="chess-board-container">
+            <div class="board-and-gauge-wrapper">
+
+              <!-- Échiquier -->
+              <div class="chess-board" [ngStyle]="{'width.px': size, 'height.px': size}">
+                <ngx-chess-board
+                  #board
+                  [size]="size"
+                  [lightTileColor]="lightTileColor"
+                  (moveChange)="moveCallback($event)"
+                  [dragDisabled]="isBoardLocked" 
+                  [drawDisabled]="drawDisabled"
+                  [darkTileColor]="darkTileColor"
+                  [lightDisabled]="isBoardLocked"
+                  [darkDisabled]="isBoardLocked"
+                  [pieceIcons]="icons"
+                  [freeMode]="freeMode">
+                </ngx-chess-board>
+              </div>
+            </div>
+
+            <!-- Contrôles navigation -->
+            <div class="navigation-controls" >
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="loadPreviousPosition()"
+                [disabled]="lightDisabled || darkDisabled"
+                matTooltip="Coup précédent (←)">
+                <mat-icon>skip_previous</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="primary"
+                (click)="loadNextPosition()"
+                [disabled]="lightDisabled || darkDisabled"
+                matTooltip="Coup suivant (→)">
+                <mat-icon>skip_next</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
+                color="accent"
+                (click)="reset()"
+                matTooltip="Réinitialiser">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </div>
+            <!-- Évaluation & Chart Tabs -->
+
+
+          <div >
+
+  
+     
+          </div>
+          
+
+            <!-- Affichage des coups -->
+            <div class="moves-display" style="margin-bottom:10px;margin-top:-20px;"   *ngIf="fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'">
+              <div class="moves-container">
+                <span
+                  *ngFor="let move of pgnMoves; let i = index"
+                  class="move-notation"
+                  [class.clickable]="isClickable(move)"
+                  [class.current-move]="i === currentMoveIndex"
+                  (click)="onMoveClick(move)">
+                  {{ move }}
+                </span>
+                <span class="move-notation next-move-card"
+                  *ngIf="currentMove"
+                  style="margin-left: 5px;"
+                  matTooltip="next move to play (⬅️➡️⬆️⬇️)">
+                  <strong>{{ currentMove?.san }}</strong>
+                </span>
+              </div>
+            </div>
+        </div>
+
+        <!-- Section Analyse -->
+        <div class="analysis-section">
+
+          <div class="info-column synthesis-card-wrapper">
+
+            
+
+
+
+
+
+
+      
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
