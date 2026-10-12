@@ -65,7 +65,7 @@ Pour une ouverture absente de la base, l'agent ne donne pas de passage Wikichess
 
 - L'offre gratuite de Gemini limite le modèle utilisé (`gemini-3.5-flash`) à 5 requêtes par minute. Une explication déjà rédigée pour une position est gardée en mémoire et n'est pas redemandée.
 - Le nom de l'ouverture vient de Lichess, qui ne le donne que pour les positions répertoriées. Sans nom, l'agent ne cherche pas de passage Wikichess.
-- Le LLM ajoute parfois des détails absents des données (nom de variante, numéro de coup). Ils sont souvent justes, mais rien ne les vérifie.
+- Le prompt demande au LLM de s'en tenir aux données reçues (coups et chiffres de Lichess, évaluation de Stockfish, extraits Wikichess), sans nom de variante ni plan de jeu venant de sa mémoire. Il l'a respecté sur les positions testées, mais rien ne le garantit à chaque réponse.
 
 ## Lancer l'API sans Docker
 
