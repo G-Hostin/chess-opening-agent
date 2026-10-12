@@ -1,0 +1,9 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "API de l'agent IA d'aide aux ouvertures d'échecs"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.143.0",
+    "uvicorn>=0.54.0",
+]
