@@ -4,6 +4,11 @@ version = "0.1.0"
 description = "API de l'agent IA d'aide aux ouvertures d'échecs"
 requires-python = ">=3.13"
 dependencies = [
+    "chess>=1.11.2",
     "fastapi>=0.143.0",
+    "langgraph>=1.2.14",
+    "python-dotenv>=1.2.4",
+    "requests>=2.34.2",
+    "stockfish>=5.2.0",
     "uvicorn>=0.54.0",
 ]
