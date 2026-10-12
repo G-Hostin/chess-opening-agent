@@ -3,6 +3,7 @@ import logging
 import chess
 from fastapi import FastAPI, HTTPException
 
+from app.agent import analyze_position
 from app.services.lichess import LichessError, get_theory_moves
 from app.services.stockfish_engine import evaluate_position
 
@@ -50,3 +51,15 @@ def evaluate(fen: str):
         raise HTTPException(status_code=500, detail="Stockfish indisponible")
     return {"fen": fen, **result}
 
+
+@app.get("/api/v1/analyze/{fen:path}")
+def analyze(fen: str):
+    fen = check_fen(fen)
+    try:
+        result = analyze_position(fen)
+    except LichessError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
+    except Exception as e:
+        logger.error(f"Erreur pendant l'analyse : {e}")
+        raise HTTPException(status_code=500, detail="Erreur pendant l'analyse")
+    return {"fen": fen, **result}
