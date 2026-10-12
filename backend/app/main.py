@@ -1,15 +1,28 @@
 import logging
+from contextlib import asynccontextmanager
 
 import chess
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 
 from app.agent import analyze_position
+from app.config import SEARCH_K
+from app.services.embeddings import get_model
 from app.services.lichess import LichessError, get_theory_moves
+from app.services.milvus_store import search
 from app.services.stockfish_engine import evaluate_position
 
 logger = logging.getLogger("uvicorn.error")
 
-app = FastAPI(title="Agent IA ouvertures d'échecs")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Le modèle d'embedding est chargé au démarrage plutôt qu'à la première question
+    get_model()
+    logger.info("Modèle d'embedding chargé")
+    yield
+
+
+app = FastAPI(title="Agent IA ouvertures d'échecs", lifespan=lifespan)
 
 
 def check_fen(fen: str) -> str:
@@ -50,6 +63,18 @@ def evaluate(fen: str):
         logger.error(f"Erreur Stockfish : {e}")
         raise HTTPException(status_code=500, detail="Stockfish indisponible")
     return {"fen": fen, **result}
+
+
+@app.get("/api/v1/vector-search")
+def vector_search(query: str, k: int = Query(SEARCH_K, ge=1, le=10)):
+    try:
+        results = search(query, k)
+    except Exception as e:
+        logger.error(f"Erreur Milvus : {e}")
+        raise HTTPException(
+            status_code=503, detail="Recherche impossible : Milvus arrêté ou index vide (lancer indexer.py)"
+        )
+    return {"query": query, "results": results}
 
 
 @app.get("/api/v1/analyze/{fen:path}")
