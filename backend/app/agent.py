@@ -1,5 +1,5 @@
 """Graphe LangGraph de l'agent : la théorie (Lichess) d'abord, Stockfish si on en est sorti,
-puis le contexte de l'ouverture (Milvus) et l'explication rédigée par le LLM."""
+puis le contexte de l'ouverture (Milvus), des vidéos (YouTube) et l'explication rédigée par le LLM."""
 
 import logging
 from typing import TypedDict
@@ -11,6 +11,7 @@ from app.services.coach import explain
 from app.services.lichess import get_theory_moves
 from app.services.milvus_store import search
 from app.services.stockfish_engine import evaluate_position
+from app.services.youtube import YouTubeError, get_videos
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -20,6 +21,7 @@ class AgentState(TypedDict):
     theory: dict | None
     stockfish: dict | None
     context: list[dict]
+    videos: list[dict]
     explanation: str | None
 
 
@@ -49,6 +51,18 @@ def context_node(state: AgentState) -> dict:
     return {"context": context}
 
 
+def videos_node(state: AgentState) -> dict:
+    # Vidéos cherchées avec le nom de l'ouverture donné par Lichess (rien sans nom)
+    opening = state["theory"]["opening"]
+    if not opening:
+        return {"videos": []}
+    try:
+        return {"videos": get_videos(opening["name"])["videos"]}
+    except YouTubeError as e:
+        logger.warning(f"Vidéos indisponibles : {e}")
+        return {"videos": []}
+
+
 def explain_node(state: AgentState) -> dict:
     explanation = explain(state["fen"], state["theory"], state["stockfish"], state["context"])
     return {"explanation": explanation}
@@ -65,18 +79,20 @@ builder = StateGraph(AgentState)
 builder.add_node("lichess", lichess_node)
 builder.add_node("stockfish", stockfish_node)
 builder.add_node("context", context_node)
+builder.add_node("videos", videos_node)
 builder.add_node("explain", explain_node)
 builder.add_edge(START, "lichess")
 builder.add_conditional_edges("lichess", route_after_lichess, ["stockfish", "context"])
 builder.add_edge("stockfish", "context")
-builder.add_edge("context", "explain")
+builder.add_edge("context", "videos")
+builder.add_edge("videos", "explain")
 builder.add_edge("explain", END)
 graph = builder.compile()
 
 
 def analyze_position(fen: str) -> dict:
     result = graph.invoke(
-        {"fen": fen, "theory": None, "stockfish": None, "context": [], "explanation": None}
+        {"fen": fen, "theory": None, "stockfish": None, "context": [], "videos": [], "explanation": None}
     )
     return {
         "in_theory": result["theory"]["in_theory"],
@@ -84,5 +100,6 @@ def analyze_position(fen: str) -> dict:
         "moves": result["theory"]["moves"],
         "stockfish": result["stockfish"],
         "context": result["context"],
+        "videos": result["videos"],
         "explanation": result["explanation"],
     }
