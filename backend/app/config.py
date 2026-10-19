@@ -28,6 +28,19 @@ CHUNK_SIZE = 1000  # caractères
 CHUNK_OVERLAP = 100
 SEARCH_K = 3
 
+# --- YouTube (vidéos explicatives) ---
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE_KEYWORDS = "ouverture échecs"
+YOUTUBE_LANGUAGE = "fr"  # vidéos en français mises en premier
+YOUTUBE_MIN_VIEWS = 5000
+YOUTUBE_MAX_VIDEOS = 3
+
+# --- MongoDB (mémoire des recherches YouTube) ---
+# Dans Docker, docker compose donne l'adresse du service mongo. En local, le port 27018 de la machine.
+MONGO_URI = os.getenv("MONGO_URI") or "mongodb://localhost:27018"
+MONGO_DB = "chess_agent"
+CACHE_DAYS = 30  # le règlement de YouTube interdit de garder ses données plus de 30 jours
+
 # --- Gemini (rédaction de l'explication) ---
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 # Version fixée (l'alias "gemini-flash-latest" change de modèle sans prévenir).
