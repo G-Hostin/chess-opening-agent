@@ -10,6 +10,7 @@ from app.services.embeddings import get_model
 from app.services.lichess import LichessError, get_theory_moves
 from app.services.milvus_store import search
 from app.services.stockfish_engine import evaluate_position
+from app.services.youtube import YouTubeError, get_videos
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -75,6 +76,16 @@ def vector_search(query: str, k: int = Query(SEARCH_K, ge=1, le=10)):
             status_code=503, detail="Recherche impossible : Milvus arrêté ou index vide (lancer indexer.py)"
         )
     return {"query": query, "results": results}
+
+
+@app.get("/api/v1/videos/{opening}")
+def videos(opening: str):
+    try:
+        result = get_videos(opening)
+    except YouTubeError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
+    message = None if result["videos"] else "Aucune vidéo trouvée pour cette ouverture"
+    return {"opening": opening, **result, "message": message}
 
 
 @app.get("/api/v1/analyze/{fen:path}")
