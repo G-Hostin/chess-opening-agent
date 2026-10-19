@@ -9,12 +9,26 @@ services:
     environment:
       # Dans le réseau Docker, Milvus se joint par le nom de son service
       MILVUS_URI: http://milvus:19530
+      MONGO_URI: mongodb://mongo:27017
     volumes:
       # Le modèle d'embedding n'est téléchargé qu'une fois
       - hf_cache:/root/.cache/huggingface
     depends_on:
       milvus:
         condition: service_healthy
+      mongo:
+        condition: service_started
+    restart: unless-stopped
+
+  # Classeur MongoDB : garde 30 jours les résultats YouTube déjà cherchés
+  mongo:
+    container_name: chess-mongo
+    image: mongo:8.0.34
+    ports:
+      # 27017 est déjà pris sur la machine par un MongoDB local, et le port n'est ouvert qu'en local
+      - "127.0.0.1:27018:27017"
+    volumes:
+      - mongo_data:/data/db
     restart: unless-stopped
 
   # --- Milvus, repris du fichier officiel milvus-standalone-docker-compose.yaml (v3.0.2) ---
@@ -107,6 +121,7 @@ services:
 
 volumes:
   hf_cache:
+  mongo_data:
   etcd_data:
   minio_data:
   milvus_data:
