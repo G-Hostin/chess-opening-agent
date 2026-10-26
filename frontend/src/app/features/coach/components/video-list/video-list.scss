@@ -1,0 +1,223 @@
+h3,
+p {
+  margin: 0;
+}
+
+.section-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+}
+
+.hint {
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+// Vidéo principale : lecteur ou miniature au format 16/9
+.frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+}
+
+.cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; // coupe les bandes noires de la miniature 4/3
+    transition: transform 0.3s;
+  }
+
+  &:hover img,
+  &:focus-visible img {
+    transform: scale(1.03);
+  }
+
+  &:hover .play,
+  &:focus-visible .play {
+    background: #c4302b;
+  }
+}
+
+.play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 48px;
+  border-radius: 14px;
+  background: rgb(0 0 0 / 0.75);
+  color: #fff;
+  transform: translate(-50%, -50%);
+  transition: background 0.2s;
+
+  mat-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 36px;
+  }
+}
+
+.duration {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.8);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.main-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--app-accent-soft);
+  color: var(--app-accent);
+  font-size: 0.72rem;
+  font-weight: 600;
+
+  &.playing {
+    background: #fde8e7;
+    color: #b3261e;
+  }
+}
+
+.main-title {
+  color: var(--app-text);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--app-accent);
+    text-decoration: underline;
+  }
+}
+
+.meta {
+  color: var(--app-muted);
+  font-size: 0.8rem;
+}
+
+.lang {
+  margin-left: 4px;
+  padding: 0 5px;
+  border: 1px solid var(--app-border);
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.close-video {
+  margin-top: 6px;
+}
+
+// Vidéos secondaires : deux cartes côte à côte
+.secondary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--app-border);
+}
+
+.side-video {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover .side-title,
+  &:focus-visible .side-title {
+    color: var(--app-accent);
+  }
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// Titre limité à deux lignes
+.side-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--app-muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .secondary {
+    grid-template-columns: 1fr;
+  }
+}

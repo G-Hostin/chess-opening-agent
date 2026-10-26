@@ -1,0 +1,67 @@
+<mat-card class="app-card" appearance="outlined">
+  <div class="section-header">
+    <h3>Pour aller plus loin en vidéo</h3>
+    @if (opening(); as name) {
+      <span class="hint">Recherche YouTube sur « {{ name }} »</span>
+    }
+  </div>
+
+  @if (main(); as video) {
+    <div class="main-video">
+      <div class="frame">
+        @if (playing()) {
+          <iframe
+            [src]="playerUrl()"
+            [title]="video.title"
+            allow="autoplay; accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+          ></iframe>
+        } @else {
+          <button class="cover" type="button" [attr.aria-label]="'Lire la vidéo : ' + video.title" (click)="play(video)">
+            <img [src]="mainThumbnail()" alt="" />
+            <span class="play"><mat-icon>play_arrow</mat-icon></span>
+            <span class="duration">{{ video.duration }}</span>
+          </button>
+        }
+      </div>
+
+      <div class="main-info">
+        <span class="tag" [class.playing]="playing()">{{ playing() ? 'En lecture' : 'Vidéo recommandée' }}</span>
+        <a class="main-title" [href]="video.url" target="_blank" rel="noopener">{{ video.title }}</a>
+        <div class="meta">
+          {{ video.channel }} · {{ views(video) }} · {{ video.duration }}
+          @if (video.language) {
+            <span class="lang">{{ video.language.slice(0, 2).toUpperCase() }}</span>
+          }
+        </div>
+        @if (playing()) {
+          <button mat-stroked-button type="button" class="close-video" (click)="close()">
+            <mat-icon>close</mat-icon>
+            Fermer la vidéo
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (secondary().length) {
+      <div class="secondary">
+        @for (other of secondary(); track other.video_id) {
+          <button class="side-video" type="button" [attr.aria-label]="'Lire la vidéo : ' + other.title" (click)="play(other)">
+            <span class="thumb">
+              <img [src]="other.thumbnail" alt="" />
+              <span class="duration">{{ other.duration }}</span>
+            </span>
+            <span class="side-title">{{ other.title }}</span>
+            <span class="meta">{{ other.channel }} · {{ views(other) }}</span>
+          </button>
+        }
+      </div>
+    }
+  } @else {
+    <p class="empty">
+      <mat-icon>videocam_off</mat-icon>
+      Pas de vidéo pour cette position : les vidéos sont cherchées à partir du nom de l'ouverture donné par Lichess.
+    </p>
+  }
+</mat-card>
