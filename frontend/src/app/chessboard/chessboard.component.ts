@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, OnDestroy, AfterViewInit, HostListener, ElementRef, ChangeDetectorRef, ViewEncapsulation, Renderer2 } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, AfterViewInit, HostListener, ElementRef, ChangeDetectorRef, ViewEncapsulation, Renderer2, computed, inject } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { UntypedFormBuilder, UntypedFormGroup, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -28,6 +28,10 @@ import { MarkdownModule } from 'ngx-markdown';
 
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTabsModule } from '@angular/material/tabs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { CoachFacade } from '../features/coach/coach.facade';
+import { Recommendations } from '../features/coach/components/recommendations/recommendations';
+import { VideoList } from '../features/coach/components/video-list/video-list';
 
 
 // ========== INTERFACES ==========
@@ -68,7 +72,9 @@ interface BoardState {
     MatDialogModule,
     MarkdownModule,
     MatBadgeModule,
-    MatTabsModule
+    MatTabsModule,
+    Recommendations,
+    VideoList
 
   ],
   providers: []
@@ -76,6 +82,20 @@ interface BoardState {
 export class ChessBoardComponent implements OnInit, AfterViewInit {
 
   @ViewChild('board') boardManager!: NgxChessBoardComponent;
+
+  // Façade du coach : analyse de la position, chargement, erreur
+  coach = inject(CoachFacade);
+
+  // Jauge d'évaluation : part des blancs en %, sur la même échelle que updateEvaluation (±1000 centipions)
+  whiteShare = computed(() => {
+    const evaluation = this.coach.analysis()?.stockfish?.evaluation;
+    if (!evaluation) {
+      return 50;
+    }
+    const centipawns = evaluation.type === 'mate' ? (evaluation.value > 0 ? 1000 : -1000) : evaluation.value;
+    const clamped = Math.max(-1000, Math.min(1000, centipawns));
+    return (clamped + 1000) / 20;
+  });
 
 
   // ========== PROPERTIES ==========
@@ -147,6 +167,9 @@ export class ChessBoardComponent implements OnInit, AfterViewInit {
     private renderer: Renderer2
   ) {
     this.initializeForm();
+
+    // Chaque nouvelle position de l'échiquier est envoyée au coach
+    this.fenUpdateSubject.pipe(takeUntilDestroyed()).subscribe((fen) => this.coach.analyzePosition(fen));
   }
 
 
@@ -402,6 +425,13 @@ public selectNextMove(): void {
   }
 
  
+
+  // Joue un coup conseillé par le coach (notation UCI, ex. "e2e4") : l'échiquier relance ensuite l'analyse
+  public playMove(uci: string): void {
+    if (!this.isBoardLocked) {
+      this.boardManager.move(uci);
+    }
+  }
 
   public playMoveFromSan(san: string): void {
     const move = this.moves.find(m => m.san === san);

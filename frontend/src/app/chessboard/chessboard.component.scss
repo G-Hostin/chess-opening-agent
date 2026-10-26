@@ -35,3 +35,39 @@
 .moves-container {
   text-align: center;
 }
+
+// Échiquier et jauge côte à côte
+.board-and-gauge-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+// Jauge : la partie blanche monte quand les blancs sont mieux
+.eval-gauge {
+  width: 16px;
+  display: flex;
+  flex-direction: column-reverse;
+  background: #333;
+  border: 1px solid #999;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.eval-white {
+  width: 100%;
+  background: #f5f5f5;
+  transition: height 0.3s;
+}
+
+// Colonne du coach à droite de l'échiquier
+.analysis-section {
+  width: min(480px, 92vw);
+}
+
+.info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}

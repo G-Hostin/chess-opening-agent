@@ -90,11 +90,8 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "buildTarget": "chess-board:build",
-            "liveReload": false,
-            "headers": {
-              "Cross-Origin-Opener-Policy": "same-origin",
-              "Cross-Origin-Embedder-Policy": "require-corp"
-            }
+            "proxyConfig": "proxy.conf.json",
+            "liveReload": false
           },
           "configurations": {
             "production": {
