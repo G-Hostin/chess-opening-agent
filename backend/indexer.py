@@ -1,10 +1,12 @@
 """Récupère quelques articles Wikichess sur les ouvertures et les charge dans Milvus.
 
-Lancement (dans le conteneur) : docker compose exec backend uv run python indexer.py
+Lancé à chaque démarrage par le service "indexer" du docker-compose : il ne fait rien si Milvus contient
+déjà les articles. Pour tout recharger : docker compose run --rm indexer uv run python indexer.py --reset
 """
 
 import codecs
 import re
+import sys
 import time
 from pathlib import Path
 
@@ -14,7 +16,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.config import CHUNK_OVERLAP, CHUNK_SIZE
 from app.services.embeddings import embed_documents
-from app.services.milvus_store import insert_chunks, reset_collection
+from app.services.milvus_store import count_chunks, insert_chunks, reset_collection
 
 WIKICHESS_URL = "https://ficgs.com/"
 DATA_DIR = Path(__file__).parent / "data" / "wikichess"
@@ -135,6 +137,10 @@ def index_chunks(chunks: list[dict]):
 
 
 if __name__ == "__main__":
+    already = count_chunks()
+    if already and "--reset" not in sys.argv:
+        print(f"Milvus contient déjà {already} morceaux, rien à faire (--reset pour tout recharger)")
+        sys.exit(0)
     download_pages()
     articles = [parse_page(name) for name in OPENINGS]
     print(f"{len(articles)} articles lus")

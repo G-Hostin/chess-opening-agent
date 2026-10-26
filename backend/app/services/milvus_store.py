@@ -25,6 +25,14 @@ def reset_collection():
     )
 
 
+def count_chunks() -> int:
+    # 0 si la collection n'existe pas encore (installation neuve)
+    client = get_client()
+    if not client.has_collection(MILVUS_COLLECTION):
+        return 0
+    return client.query(MILVUS_COLLECTION, filter="", output_fields=["count(*)"])[0]["count(*)"]
+
+
 def insert_chunks(chunks: list[dict], vectors: list[list[float]]) -> int:
     data = [{"vector": vector, **chunk} for chunk, vector in zip(chunks, vectors)]
     result = get_client().insert(MILVUS_COLLECTION, data=data)
