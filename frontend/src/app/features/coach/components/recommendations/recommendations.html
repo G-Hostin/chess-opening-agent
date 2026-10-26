@@ -1,0 +1,75 @@
+<mat-card class="coach-panel" appearance="outlined">
+  <mat-card-content>
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+      <p class="hint">Analyse de la position…</p>
+    }
+
+    @if (error(); as message) {
+      <div class="error">
+        <span>{{ message }}</span>
+        <button mat-stroked-button type="button" (click)="retry.emit()">Réessayer</button>
+      </div>
+    }
+
+    <!-- Pendant le chargement, l'ancienne analyse reste visible mais grisée et ses coups ne sont plus cliquables -->
+    @if (analysis(); as a) {
+      <div [class.stale]="loading()">
+        <div class="opening">
+          <h2>{{ a.opening ? a.opening.name : 'Ouverture sans nom' }}</h2>
+          @if (a.opening) {
+            <span class="eco">{{ a.opening.eco }}</span>
+          }
+          <span class="badge" [class.out]="!a.in_theory">{{ a.in_theory ? 'Dans la théorie' : 'Hors théorie' }}</span>
+        </div>
+
+        @if (topMoves().length) {
+          <h3>Coups joués par les maîtres</h3>
+          @for (move of topMoves(); track move.uci) {
+            <button class="move" type="button" title="Jouer ce coup" [disabled]="loading()" (click)="movePlayed.emit(move.uci)">
+              <span class="san">{{ move.san }}</span>
+              <span class="games">{{ move.gamesText }} parties</span>
+              <span class="results">
+                <span class="white" [style.width.%]="move.whitePct"></span>
+                <span class="draws" [style.width.%]="move.drawsPct"></span>
+                <span class="black" [style.width.%]="move.blackPct"></span>
+              </span>
+            </button>
+          }
+          <p class="legend">Barre : victoires des blancs, nulles, victoires des noirs. Un clic sur un coup le joue.</p>
+        }
+
+        @if (a.stockfish; as stockfish) {
+          <h3>Évaluation de Stockfish</h3>
+          <p class="evaluation">{{ evaluationText() }}</p>
+          @if (stockfish.best_move; as best) {
+            <button mat-stroked-button type="button" [disabled]="loading()" (click)="movePlayed.emit(best.uci)">
+              Jouer son meilleur coup : {{ best.san }}
+            </button>
+          }
+        }
+
+        <h3>L'explication du coach</h3>
+        @if (a.explanation) {
+          <markdown class="explanation" [data]="a.explanation"></markdown>
+        } @else {
+          <!-- Si Gemini refuse (quota gratuit atteint, service saturé), l'API renvoie l'analyse sans explication -->
+          <div class="missing">
+            <span>Explication indisponible pour le moment : le modèle gratuit est saturé ou son quota est atteint.</span>
+            <button mat-button type="button" [disabled]="loading()" (click)="retry.emit()">Redemander</button>
+          </div>
+        }
+
+        @if (a.context.length) {
+          <mat-expansion-panel class="sources">
+            <mat-expansion-panel-header>Sources Wikichess ({{ a.context.length }})</mat-expansion-panel-header>
+            @for (passage of a.context; track passage.text) {
+              <p class="passage">{{ passage.text }}</p>
+              <a [href]="passage.source" target="_blank" rel="noopener">Voir l'article sur Wikichess</a>
+            }
+          </mat-expansion-panel>
+        }
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

@@ -1,0 +1,149 @@
+.coach-panel {
+  width: 100%;
+}
+
+.hint {
+  margin: 6px 0 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fdecea;
+  color: #8a1c13;
+}
+
+.opening {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+}
+
+.eco {
+  color: #666;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #e3f3e8;
+  color: #1e7b3a;
+
+  &.out {
+    background: #fff1d9;
+    color: #9a5b00;
+  }
+}
+
+h3 {
+  margin: 16px 0 6px;
+  font-size: 1rem;
+}
+
+.stale {
+  opacity: 0.5;
+}
+
+.missing {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #666;
+  font-size: 0.9rem;
+
+  button {
+    flex-shrink: 0;
+  }
+}
+
+.move {
+  display: grid;
+  grid-template-columns: 60px 120px 1fr;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover:not(:disabled) {
+    background: #f3f6fa;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.san {
+  font-weight: 700;
+}
+
+.games {
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.results {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #ccc;
+
+  .white {
+    background: #f5f5f5;
+  }
+
+  .draws {
+    background: #9e9e9e;
+  }
+
+  .black {
+    background: #333;
+  }
+}
+
+.legend {
+  margin: 4px 0 0;
+  color: #777;
+  font-size: 0.8rem;
+}
+
+.evaluation {
+  font-weight: 600;
+}
+
+.explanation {
+  display: block;
+  line-height: 1.5;
+}
+
+.sources {
+  margin-top: 12px;
+}
+
+.passage {
+  font-size: 0.85rem;
+  white-space: pre-line;
+}
