@@ -1,8 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { catchError, debounceTime, distinctUntilChanged, merge, of, Subject, switchMap, tap } from 'rxjs';
 import { Analysis } from '../../core/models/analysis';
 import { AgentApi } from '../../core/services/agent-api';
+
+// Deux FEN décrivent la même position si les pièces et le camp qui joue sont les mêmes
+// (l'API peut réécrire la fin de la FEN, par exemple la case de prise en passant)
+function samePosition(fenA: string, fenB: string): boolean {
+  return fenA.split(' ').slice(0, 2).join(' ') === fenB.split(' ').slice(0, 2).join(' ');
+}
 
 // Façade du coach : les composants demandent l'analyse d'une position,
 // la façade s'occupe de l'appel, du chargement et des erreurs.
@@ -12,15 +18,22 @@ export class CoachFacade {
 
   private positions = new Subject<string>();
   private retries = new Subject<string>();
-  private lastFen = '';
 
   private _analysis = signal<Analysis | null>(null);
   private _loading = signal(false);
   private _error = signal<string | null>(null);
+  private _position = signal(''); // dernière position envoyée par l'échiquier
 
   readonly analysis = this._analysis.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+
+  // Vrai quand l'analyse affichée est bien celle de la position de l'échiquier.
+  // Faux pendant l'attente de la réponse (ou après une erreur) : on évite alors de jouer un coup d'une ancienne position
+  readonly upToDate = computed(() => {
+    const analysis = this._analysis();
+    return analysis !== null && samePosition(analysis.fen, this._position());
+  });
 
   constructor() {
     merge(
@@ -54,12 +67,12 @@ export class CoachFacade {
   }
 
   analyzePosition(fen: string): void {
-    this.lastFen = fen;
+    this._position.set(fen);
     this.positions.next(fen);
   }
 
   retry(): void {
-    this.retries.next(this.lastFen);
+    this.retries.next(this._position());
   }
 
   private errorMessage(error: HttpErrorResponse): string {
