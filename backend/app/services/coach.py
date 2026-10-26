@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from app.config import GOOGLE_API_KEY, LLM_MODEL
+from app.services.mongo_store import get_cached_explanation, save_explanation
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -23,11 +24,6 @@ Règles :
 - Parle des camps par leur nom (les blancs, les noirs), car tu ne sais pas avec quelle couleur joue l'élève.
 - Écris en français, avec des phrases courtes, et tutoie le joueur. Pas de phrase d'encouragement à la fin.
 - Réponds en Markdown, en 120 mots maximum : l'ouverture et son idée si un extrait Wikichess la donne, puis les coups des maîtres avec leurs chiffres. Si on est sorti de la théorie, donne l'évaluation de Stockfish et son meilleur coup."""
-
-
-# Explications déjà rédigées, par position. L'offre gratuite de Gemini limite le modèle
-# à 5 requêtes par minute : une position déjà vue n'est pas redemandée.
-explanations = {}
 
 
 def percent(part: int, total: int) -> int:
@@ -75,8 +71,16 @@ def build_message(fen: str, theory: dict, stockfish: dict | None, context: list[
 
 
 def explain(fen: str, theory: dict, stockfish: dict | None, context: list[dict]) -> str | None:
-    if fen in explanations:
-        return explanations[fen]
+    # L'offre gratuite de Gemini limite le modèle à 5 requêtes par minute et 20 par jour :
+    # une position déjà expliquée est relue dans MongoDB (si MongoDB répond)
+    try:
+        cached = get_cached_explanation(fen)
+    except Exception as e:
+        logger.warning(f"MongoDB indisponible, explication sans mémoire : {e}")
+        cached = None
+    if cached:
+        return cached
+
     if not GOOGLE_API_KEY:
         logger.warning("GOOGLE_API_KEY manquante : pas d'explication")
         return None
@@ -98,5 +102,10 @@ def explain(fen: str, theory: dict, stockfish: dict | None, context: list[dict])
     except Exception as e:
         logger.error(f"Erreur Gemini : {e}")
         return None
-    explanations[fen] = text
+    if not text:
+        return None
+    try:
+        save_explanation(fen, text)
+    except Exception as e:
+        logger.warning(f"Explication non enregistrée dans MongoDB : {e}")
     return text

@@ -89,7 +89,7 @@ Si MongoDB ne répond pas, la recherche se fait quand même, sans mémoire.
 
 ## Limites connues
 
-- L'offre gratuite de Gemini limite le modèle utilisé (`gemini-3.5-flash`) à 5 requêtes par minute et 20 par jour. Une explication déjà rédigée pour une position est gardée en mémoire jusqu'au redémarrage de l'API. Quand Gemini refuse, l'interface affiche l'analyse sans explication, avec un bouton pour la redemander.
+- L'offre gratuite de Gemini limite le modèle utilisé (`gemini-3.5-flash`) à 5 requêtes par minute et 20 par jour. Les explications déjà rédigées sont gardées dans MongoDB (collection `explanations`, une par position), donc une position déjà vue ne coûte plus de requête, même après un redémarrage. Après une modification du prompt, il faut vider cette collection pour que les explications soient réécrites. Quand Gemini refuse, l'interface affiche l'analyse sans explication, avec un bouton pour la redemander.
 - Le nom de l'ouverture vient de Lichess (en anglais), qui ne le donne que pour les positions répertoriées. Sans nom, l'agent ne cherche ni passage Wikichess ni vidéo.
 - L'offre gratuite de YouTube permet 100 recherches par jour. Au-delà, la route des vidéos renvoie une erreur 503 jusqu'au lendemain, et l'agent répond sans vidéos.
 - La pertinence des vidéos dépend du classement de YouTube. Pour une variante précise, certaines vidéos parlent de toute l'ouverture (la Sicilienne en général plutôt que la Najdorf), et quelques-unes portent sur des pièges plutôt que sur les idées de l'ouverture.

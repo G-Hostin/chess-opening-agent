@@ -1,4 +1,4 @@
-"""Le classeur MongoDB : garde les résultats YouTube pour ne pas refaire les mêmes recherches."""
+"""Le classeur MongoDB : garde les résultats YouTube et les explications de Gemini pour ne pas refaire les mêmes demandes."""
 
 from datetime import datetime, timezone
 from functools import lru_cache
@@ -9,9 +9,14 @@ from app.config import CACHE_DAYS, MONGO_DB, MONGO_URI
 
 
 @lru_cache
-def get_videos_collection():
+def get_database():
     client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=3000)
-    collection = client[MONGO_DB]["videos"]
+    return client[MONGO_DB]
+
+
+@lru_cache
+def get_videos_collection():
+    collection = get_database()["videos"]
     # MongoDB supprime tout seul les fiches enregistrées depuis plus de 30 jours
     collection.create_index("created_at", expireAfterSeconds=CACHE_DAYS * 24 * 3600)
     return collection
@@ -27,5 +32,19 @@ def save_videos(opening: str, videos: list[dict]):
     get_videos_collection().replace_one(
         {"_id": opening},
         {"_id": opening, "videos": videos, "created_at": datetime.now(timezone.utc)},
+        upsert=True,
+    )
+
+
+def get_cached_explanation(fen: str) -> str | None:
+    doc = get_database()["explanations"].find_one({"_id": fen})
+    return doc["text"] if doc else None
+
+
+def save_explanation(fen: str, text: str):
+    # Pas de durée limite ici : ces textes sont produits par l'agent, pas récupérés chez YouTube
+    get_database()["explanations"].replace_one(
+        {"_id": fen},
+        {"_id": fen, "text": text, "created_at": datetime.now(timezone.utc)},
         upsert=True,
     )
