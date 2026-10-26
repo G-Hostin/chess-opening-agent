@@ -2,7 +2,7 @@
 
 Projet réalisé pour la Fédération Française des Échecs : un prototype d'agent qui aide les jeunes joueurs à travailler leurs ouvertures. Pour la position affichée sur l'échiquier, l'agent proposera les coups de la théorie, des explications sur l'ouverture, des vidéos et une évaluation par Stockfish.
 
-Le projet est en construction. Pour l'instant, l'API donne pour une position les coups joués par des maîtres (Lichess), l'évaluation de Stockfish quand on sort de la théorie, des passages d'articles Wikichess sur l'ouverture (recherche vectorielle dans Milvus), des vidéos YouTube en français et une explication rédigée par un LLM (Gemini de Google). L'interface n'est pas encore branchée.
+Le projet est en construction. Pour l'instant, l'API donne pour une position les coups joués par des maîtres (Lichess), l'évaluation de Stockfish quand on sort de la théorie, des passages d'articles Wikichess sur l'ouverture (recherche vectorielle dans Milvus), des vidéos YouTube en français et une explication rédigée par un LLM (Gemini de Google). L'interface Angular affiche tout ça à côté de l'échiquier.
 
 ## Organisation
 
@@ -11,7 +11,9 @@ Le projet est en construction. Pour l'instant, l'API donne pour une position les
   - `app/agent.py` : le graphe LangGraph de l'agent
   - `indexer.py` : récupère les articles Wikichess et les charge dans Milvus
   - `data/wikichess/` : les 10 pages Wikichess utilisées (l'adresse d'origine est notée en tête de chaque fichier)
-- `frontend/` : l'interface Angular (starter material-chessboard), pas encore reliée à l'API
+- `frontend/` : l'interface Angular, partie du starter material-chessboard
+  - `src/app/core/` : le format de la réponse de l'API et le service qui l'appelle
+  - `src/app/features/coach/` : la façade du coach (appels, chargement, erreurs) et les composants du panneau d'analyse et des vidéos
 - `docker-compose.yml` : lance l'API, MongoDB et Milvus (avec etcd et MinIO, comme dans le fichier officiel de Milvus)
 
 ## Lancer le projet
@@ -37,6 +39,20 @@ docker compose exec backend uv run python indexer.py
 ```
 
 L'API répond sur http://localhost:8000/api/v1/healthcheck, et sa documentation est sur http://localhost:8000/docs. Pour changer de port, modifier `BACKEND_PORT` dans `.env`.
+
+## Lancer l'interface
+
+Il faut Node.js (version 22 utilisée ici) et l'API lancée avec Docker.
+
+```bash
+cd frontend
+npm install
+npx ng serve
+```
+
+L'interface est sur http://localhost:4200. En développement, Angular transmet les appels `/api` à l'API sur le port 8000 (fichier `proxy.conf.json`), il n'y a donc pas de CORS à régler côté API.
+
+À chaque coup joué, l'interface demande l'analyse de la nouvelle position à `/api/v1/analyze`. Si plusieurs coups s'enchaînent en moins de 300 ms, seule la dernière position est envoyée, et une analyse en cours est abandonnée quand la position change. Pendant le chargement, l'ancienne analyse reste affichée en grisé et ses coups ne sont plus cliquables. Un clic sur un coup proposé le joue sur l'échiquier. La jauge à gauche de l'échiquier n'apparaît que hors théorie, quand Stockfish a donné une évaluation.
 
 ## Routes de l'API
 
@@ -73,8 +89,8 @@ Si MongoDB ne répond pas, la recherche se fait quand même, sans mémoire.
 
 ## Limites connues
 
-- L'offre gratuite de Gemini limite le modèle utilisé (`gemini-3.5-flash`) à 5 requêtes par minute. Une explication déjà rédigée pour une position est gardée en mémoire et n'est pas redemandée.
-- Le nom de l'ouverture vient de Lichess, qui ne le donne que pour les positions répertoriées. Sans nom, l'agent ne cherche ni passage Wikichess ni vidéo.
+- L'offre gratuite de Gemini limite le modèle utilisé (`gemini-3.5-flash`) à 5 requêtes par minute et 20 par jour. Une explication déjà rédigée pour une position est gardée en mémoire jusqu'au redémarrage de l'API. Quand Gemini refuse, l'interface affiche l'analyse sans explication, avec un bouton pour la redemander.
+- Le nom de l'ouverture vient de Lichess (en anglais), qui ne le donne que pour les positions répertoriées. Sans nom, l'agent ne cherche ni passage Wikichess ni vidéo.
 - L'offre gratuite de YouTube permet 100 recherches par jour. Au-delà, la route des vidéos renvoie une erreur 503 jusqu'au lendemain, et l'agent répond sans vidéos.
 - La pertinence des vidéos dépend du classement de YouTube. Pour une variante précise, certaines vidéos parlent de toute l'ouverture (la Sicilienne en général plutôt que la Najdorf), et quelques-unes portent sur des pièges plutôt que sur les idées de l'ouverture.
 - Le prompt demande au LLM de s'en tenir aux données reçues (coups et chiffres de Lichess, évaluation de Stockfish, extraits Wikichess), sans nom de variante ni plan de jeu venant de sa mémoire. Il l'a respecté sur les positions testées, mais rien ne le garantit à chaque réponse.
