@@ -1,73 +1,270 @@
-.adaptive-layout {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 20px;
+.mat-drawer-container.sidenav-container {
+  min-height: 100vh;
+  background: var(--app-bg);
 }
 
-.chess-section {
+// Barre du haut
+.mat-toolbar.app-toolbar {
+  height: 72px;
+  padding: 0 24px;
+  gap: 14px;
+  background: var(--app-header);
+  color: #fff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+
+.app-logo {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.12);
+
+  img {
+    width: 34px;
+  }
+}
+
+.app-heading {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  line-height: 1.25;
+}
+
+.app-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.app-subtitle {
+  font-size: 0.8rem;
+  font-weight: 400;
+  opacity: 0.8;
+  white-space: normal;
+}
+
+// Deux colonnes : l'échiquier à gauche, l'analyse à droite
+.adaptive-layout {
+  display: grid;
+  grid-template-columns: auto minmax(0, 720px);
+  justify-content: center;
+  align-items: start;
+  gap: 24px;
+  padding: 24px;
+}
+
+// L'échiquier reste à l'écran quand on fait défiler l'analyse
+.chess-section {
+  position: sticky;
+  top: 24px;
 }
 
 .analysis-section {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.board-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow);
+}
+
+.board-status {
+  display: flex;
   align-items: center;
-  padding-top: 10px;
+  justify-content: space-between;
+  min-height: 24px;
+  font-weight: 500;
 }
 
-.navigation-controls {
-  display: flex;
-  justify-content: center;
+.turn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.moves-display {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+.turn-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1.5px #555;
+
+  &.black {
+    background: #222;
+    box-shadow: none;
+  }
 }
 
-.moves-container {
-  text-align: center;
+.status-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--app-muted);
+  font-size: 0.85rem;
 }
 
 // Échiquier et jauge côte à côte
 .board-and-gauge-wrapper {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 
-// Jauge : la partie blanche monte quand les blancs sont mieux
+// Jauge : la partie blanche grandit quand les blancs sont mieux
 .eval-gauge {
-  width: 16px;
+  position: relative;
   display: flex;
   flex-direction: column-reverse;
-  background: #333;
-  border: 1px solid #999;
-  border-radius: 4px;
+  width: 22px;
+  border-radius: 6px;
   overflow: hidden;
+  background: #2b2f2c;
+  transition: opacity 0.2s;
+
+  // Échiquier retourné : les blancs sont en haut, la partie blanche aussi
+  &.reversed {
+    flex-direction: column;
+  }
+
+  &.inactive {
+    opacity: 0.3;
+  }
 }
 
 .eval-white {
   width: 100%;
-  background: #f5f5f5;
-  transition: height 0.3s;
+  background: #f6f4ef;
+  transition: height 0.4s ease;
 }
 
-// Colonne du coach à droite de l'échiquier
-.analysis-section {
-  width: min(480px, 92vw);
+// Score écrit du côté du camp qui a l'avantage
+.eval-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 4px;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-align: center;
+
+  &.on-white {
+    top: auto;
+    bottom: 4px;
+    color: var(--app-text);
+  }
 }
 
-.info-column {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.eval-gauge.reversed .eval-label {
+  top: auto;
+  bottom: 4px;
+
+  &.on-white {
+    top: 4px;
+    bottom: auto;
+  }
+}
+
+.chess-board {
+  position: relative;
+  border-radius: 4px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+}
+
+// Flèche dessinée par-dessus l'échiquier, sans bloquer les clics sur les pièces
+.move-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   width: 100%;
+  height: 100%;
+  pointer-events: none;
+
+  line {
+    stroke: #15781b;
+    stroke-width: 2;
+  }
+
+  path {
+    fill: #15781b;
+  }
+}
+
+.navigation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+// Historique des coups
+.moves-display {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  padding-top: 10px;
+  border-top: 1px solid var(--app-border);
+}
+
+.move-number {
+  margin-left: 6px;
+  color: var(--app-muted);
+  font-size: 0.85rem;
+}
+
+.move-notation {
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--app-text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--app-accent-soft);
+  }
+
+  &.current-move {
+    background: var(--app-header);
+    color: #fff;
+  }
+}
+
+.moves-hint {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+// Petit écran : une seule colonne, l'échiquier au-dessus de l'analyse
+@media (max-width: 999px) {
+  .adaptive-layout {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+
+  .chess-section {
+    position: static;
+    justify-self: center;
+  }
+
+  .app-subtitle {
+    display: none;
+  }
 }

@@ -18,30 +18,48 @@
     <div class="main-content">
 
       <!-- Toolbar principale -->
-      <mat-toolbar color="primary" class="mat-elevation-z4">
-        <span class="app-title">Coach d'ouvertures</span>
-
-
+      <mat-toolbar class="app-toolbar">
+        <span class="app-logo"><img src="assets/pieces/Chess_nlt45.svg" alt=""></span>
+        <div class="app-heading">
+          <span class="app-title">Coach d'ouvertures</span>
+          <span class="app-subtitle">Les coups des maîtres, l'avis du coach et des vidéos pour chaque position</span>
+        </div>
       </mat-toolbar>
 
- 
-
-      
-
       <!-- Layout principal -->
-      <div class="adaptive-layout" >
+      <div class="adaptive-layout">
 
-        <!-- Section Échiquier -->
-        <div class="chess-section">
-          <div class="chess-board-container">
-            <div class="board-and-gauge-wrapper">
+        <!-- Section Échiquier : reste visible quand on fait défiler l'analyse -->
+        <section class="chess-section">
+          <div class="board-panel">
 
-              <!-- Jauge d'évaluation : seulement quand Stockfish a été appelé (hors théorie) -->
-              @if (coach.analysis()?.stockfish) {
-                <div class="eval-gauge" [ngStyle]="{'height.px': size}" title="Évaluation de Stockfish">
-                  <div class="eval-white" [style.height.%]="whiteShare()"></div>
-                </div>
+            <div class="board-status">
+              <span class="turn">
+                <span class="turn-dot" [class.black]="sideToMove() === 'b'"></span>
+                {{ sideToMove() === 'w' ? 'Aux blancs de jouer' : 'Aux noirs de jouer' }}
+              </span>
+              @if (coach.loading()) {
+                <span class="status-loading">
+                  <mat-progress-spinner mode="indeterminate" diameter="16"></mat-progress-spinner>
+                  Analyse en cours
+                </span>
               }
+            </div>
+
+            <div class="board-and-gauge-wrapper">
+              <!-- Jauge d'évaluation : remplie seulement quand Stockfish a été appelé (hors théorie) -->
+              <div
+                class="eval-gauge"
+                [class.inactive]="!coach.analysis()?.stockfish || !coach.upToDate()"
+                [class.reversed]="reversed()"
+                [ngStyle]="{'height.px': size}"
+                [matTooltip]="coach.analysis()?.stockfish ? 'Évaluation de Stockfish (partie blanche : avantage des blancs)' : 'Stockfish évalue la position quand on sort de la théorie'"
+                matTooltipPosition="left">
+                <div class="eval-white" [style.height.%]="whiteShare()"></div>
+                @if (coach.analysis()?.stockfish) {
+                  <span class="eval-label" [class.on-white]="whiteShare() >= 50">{{ gaugeLabel() }}</span>
+                }
+              </div>
 
               <!-- Échiquier -->
               <div class="chess-board" [ngStyle]="{'width.px': size, 'height.px': size}">
@@ -50,7 +68,7 @@
                   [size]="size"
                   [lightTileColor]="lightTileColor"
                   (moveChange)="moveCallback($event)"
-                  [dragDisabled]="isBoardLocked" 
+                  [dragDisabled]="isBoardLocked"
                   [drawDisabled]="drawDisabled"
                   [darkTileColor]="darkTileColor"
                   [lightDisabled]="isBoardLocked"
@@ -58,83 +76,106 @@
                   [pieceIcons]="icons"
                   [freeMode]="freeMode">
                 </ngx-chess-board>
+
+                <!-- Flèche du coup survolé dans le panneau du coach -->
+                @if (previewArrow(); as arrow) {
+                  <svg class="move-preview" viewBox="0 0 100 100" aria-hidden="true">
+                    <defs>
+                      <marker id="preview-head" markerWidth="3" markerHeight="3" refX="0" refY="1.5" orient="auto">
+                        <path d="M0,0 L3,1.5 L0,3 z" />
+                      </marker>
+                    </defs>
+                    <g opacity="0.8">
+                      <line [attr.x1]="arrow.x1" [attr.y1]="arrow.y1" [attr.x2]="arrow.x2" [attr.y2]="arrow.y2" marker-end="url(#preview-head)" />
+                    </g>
+                  </svg>
+                }
               </div>
             </div>
 
             <!-- Contrôles navigation -->
-            <div class="navigation-controls" >
+            <div class="navigation-controls">
               <button
                 mat-icon-button
-                color="primary"
                 (click)="loadPreviousPosition()"
-                [disabled]="lightDisabled || darkDisabled"
+                [disabled]="!pgn"
+                aria-label="Coup précédent"
                 matTooltip="Coup précédent (←)">
-                <mat-icon>skip_previous</mat-icon>
+                <mat-icon>undo</mat-icon>
               </button>
 
               <button
-                mat-icon-button
-                color="primary"
+                mat-flat-button
                 (click)="loadNextPosition()"
-                [disabled]="lightDisabled || darkDisabled"
-                matTooltip="Coup suivant (→)">
-                <mat-icon>skip_next</mat-icon>
+                [disabled]="!nextMove()"
+                matTooltip="Joue le coup le plus joué par les maîtres, ou celui de Stockfish hors théorie (→)">
+                <mat-icon>play_arrow</mat-icon>
+                Coup conseillé
               </button>
 
               <button
                 mat-icon-button
-                color="accent"
+                (click)="flipBoard()"
+                aria-label="Retourner l'échiquier"
+                matTooltip="Retourner l'échiquier">
+                <mat-icon>swap_vert</mat-icon>
+              </button>
+
+              <button
+                mat-icon-button
                 (click)="reset()"
-                matTooltip="Réinitialiser">
-                <mat-icon>refresh</mat-icon>
+                aria-label="Recommencer"
+                matTooltip="Recommencer depuis la position de départ">
+                <mat-icon>restart_alt</mat-icon>
               </button>
             </div>
-          </div>
-            <!-- Évaluation & Chart Tabs -->
 
-
-          <div >
-
-  
-     
-          </div>
-          
-
-            <!-- Affichage des coups -->
-            <div class="moves-display" style="margin-bottom:10px;margin-top:-20px;"   *ngIf="fen !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'">
-              <div class="moves-container">
-                <span
-                  *ngFor="let move of pgnMoves; let i = index"
-                  class="move-notation"
-                  [class.clickable]="isClickable(move)"
-                  [class.current-move]="i === currentMoveIndex"
-                  (click)="onMoveClick(move)">
-                  {{ move }}
-                </span>
-                <span class="move-notation next-move-card"
-                  *ngIf="currentMove"
-                  style="margin-left: 5px;"
-                  matTooltip="next move to play (⬅️➡️⬆️⬇️)">
-                  <strong>{{ currentMove?.san }}</strong>
-                </span>
-              </div>
+            <!-- Affichage des coups : un clic ramène l'échiquier à ce coup. Largeur limitée à celle de l'échiquier et de la jauge -->
+            <div class="moves-display" [ngStyle]="{'max-width.px': size + 32}">
+              @if (pgn) {
+                @for (token of pgnMoves; track $index; let i = $index) {
+                  @if (isMoveNumber(token)) {
+                    <span class="move-number">{{ token }}</span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="move-notation"
+                      [class.current-move]="i === currentMoveIndex"
+                      (click)="onMoveClick(i)">
+                      {{ token }}
+                    </button>
+                  }
+                }
+              } @else {
+                <p class="moves-hint">Les coups joués s'afficheront ici. Un clic sur un coup ramène l'échiquier à ce moment de la partie.</p>
+              }
             </div>
-        </div>
+          </div>
+        </section>
 
         <!-- Section Analyse -->
-        <div class="analysis-section">
+        <section class="analysis-section">
+          <app-recommendations
+            [analysis]="coach.analysis()"
+            [loading]="coach.loading()"
+            [stale]="!coach.upToDate()"
+            [error]="coach.error()"
+            (movePlayed)="playMove($event)"
+            (movePreview)="previewMove.set($event)"
+            (retry)="coach.retry()">
+          </app-recommendations>
 
-          <div class="info-column synthesis-card-wrapper">
-            <app-recommendations
-              [analysis]="coach.analysis()"
-              [loading]="coach.loading()"
-              [error]="coach.error()"
-              (movePlayed)="playMove($event)"
+          @if (coach.analysis(); as analysis) {
+            <app-coach-explanation
+              [explanation]="analysis.explanation"
+              [sources]="analysis.context"
+              [stale]="!coach.upToDate()"
               (retry)="coach.retry()">
-            </app-recommendations>
-            <app-video-list [videos]="coach.analysis()?.videos ?? []"></app-video-list>
-          </div>
-        </div>
+            </app-coach-explanation>
+
+            <app-video-list [videos]="analysis.videos" [opening]="analysis.opening?.name ?? null"></app-video-list>
+          }
+        </section>
       </div>
 
     </div>

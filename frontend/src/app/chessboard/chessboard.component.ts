@@ -1,4 +1,4 @@
-import { Component, ViewChild, OnInit, OnDestroy, AfterViewInit, HostListener, ElementRef, ChangeDetectorRef, ViewEncapsulation, Renderer2, computed, inject } from '@angular/core';
+import { Component, ViewChild, OnInit, OnDestroy, AfterViewInit, HostListener, ElementRef, ChangeDetectorRef, ViewEncapsulation, Renderer2, computed, inject, signal } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { UntypedFormBuilder, UntypedFormGroup, UntypedFormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { BreakpointObserver } from '@angular/cdk/layout';
@@ -32,6 +32,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CoachFacade } from '../features/coach/coach.facade';
 import { Recommendations } from '../features/coach/components/recommendations/recommendations';
 import { VideoList } from '../features/coach/components/video-list/video-list';
+import { CoachExplanation } from '../features/coach/components/coach-explanation/coach-explanation';
 
 
 // ========== INTERFACES ==========
@@ -74,6 +75,7 @@ interface BoardState {
     MatBadgeModule,
     MatTabsModule,
     Recommendations,
+    CoachExplanation,
     VideoList
 
   ],
@@ -95,6 +97,52 @@ export class ChessBoardComponent implements OnInit, AfterViewInit {
     const centipawns = evaluation.type === 'mate' ? (evaluation.value > 0 ? 1000 : -1000) : evaluation.value;
     const clamped = Math.max(-1000, Math.min(1000, centipawns));
     return (clamped + 1000) / 20;
+  });
+
+  // Score écrit dans la jauge : « +2,2 » ou « M3 »
+  gaugeLabel = computed(() => {
+    const evaluation = this.coach.analysis()?.stockfish?.evaluation;
+    if (!evaluation) {
+      return '';
+    }
+    if (evaluation.type === 'mate') {
+      return `M${Math.abs(evaluation.value)}`;
+    }
+    return `${evaluation.value >= 0 ? '+' : '-'}${(Math.abs(evaluation.value) / 100).toFixed(1).replace('.', ',')}`;
+  });
+
+  // Position affichée sur l'échiquier, et camp qui doit jouer (2e champ de la FEN)
+  boardFen = signal('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+  sideToMove = computed(() => (this.boardFen().split(' ')[1] === 'b' ? 'b' : 'w'));
+
+  // Échiquier retourné (les noirs en bas) : la flèche et la jauge doivent suivre
+  reversed = signal(false);
+
+  // Coup survolé dans le panneau du coach (UCI, ex. "g1f3"), dessiné en flèche sur l'échiquier
+  previewMove = signal<string | null>(null);
+
+  previewArrow = computed(() => {
+    const uci = this.previewMove();
+    if (!uci) {
+      return null;
+    }
+    const from = this.squareCenter(uci.slice(0, 2));
+    const to = this.squareCenter(uci.slice(2, 4));
+    // Le trait s'arrête avant la case d'arrivée pour laisser la place à la pointe (6 unités de long)
+    const length = Math.hypot(to.x - from.x, to.y - from.y);
+    const x2 = to.x - ((to.x - from.x) / length) * 6;
+    const y2 = to.y - ((to.y - from.y) / length) * 6;
+    return { x1: from.x, y1: from.y, x2, y2 };
+  });
+
+  // Coup suivant (bouton → et flèche du clavier) : le coup le plus joué par les maîtres,
+  // ou le meilleur coup de Stockfish hors théorie. Rien tant que l'analyse n'est pas à jour
+  nextMove = computed(() => {
+    if (!this.coach.upToDate()) {
+      return null;
+    }
+    const analysis = this.coach.analysis();
+    return analysis?.moves[0]?.uci ?? analysis?.stockfish?.best_move?.uci ?? null;
   });
 
 
@@ -169,7 +217,11 @@ export class ChessBoardComponent implements OnInit, AfterViewInit {
     this.initializeForm();
 
     // Chaque nouvelle position de l'échiquier est envoyée au coach
-    this.fenUpdateSubject.pipe(takeUntilDestroyed()).subscribe((fen) => this.coach.analyzePosition(fen));
+    this.fenUpdateSubject.pipe(takeUntilDestroyed()).subscribe((fen) => {
+      this.boardFen.set(fen);
+      this.previewMove.set(null);
+      this.coach.analyzePosition(fen);
+    });
   }
 
 
@@ -220,19 +272,24 @@ export class ChessBoardComponent implements OnInit, AfterViewInit {
 
 
 
-// méthode onMoveClick pour mettre à jour l'index du coup actuel
-public onMoveClick(clickedMove: any): void {
-
-  const index = this.pgnMoves.indexOf(clickedMove);
-  if (index !== -1 && !this.isBoardLocked) {
+// méthode onMoveClick pour revenir à un coup de l'historique (on reçoit son index : un même coup peut apparaître deux fois)
+public onMoveClick(index: number): void {
+  if (index >= 0 && !this.isBoardLocked) {
     this.currentMoveIndex = index;
     const previousMoves = this.pgnMoves.slice(0, index + 1);
     this.pgn = previousMoves.join(' ');
     this.pgnMoves = this.pgn.split(/\s+/);
     this.setPgn();
     this.boardStates.length = this.countMoves(this.pgn);
+    // Le coach doit analyser la position affichée
+    this.fen = this.boardManager.getFEN();
+    this.fenUpdateSubject.next(this.fen);
     this.cdr.detectChanges();
   }
+}
+
+public isMoveNumber(token: string): boolean {
+  return /^\d+\.$/.test(token);
 }
 
 
@@ -335,7 +392,9 @@ parseEvaluationToCentipawns(evaluation: string): number {
 
   }
  public loadNextPosition(): void {
-    if (this.moves && this.moves.length > 0 && !this.lightDisabled && !this.darkDisabled  && !this.isBoardLocked) {
+    const uci = this.nextMove();
+    if (uci) {
+      this.playMove(uci);
     }
   }
 
@@ -419,9 +478,40 @@ public selectNextMove(): void {
 
   // ========== BOARD SIZE MANAGEMENT ==========
 
-  private setBoardSize(): void {
-    this.size = window.innerWidth * (window.innerHeight > window.innerWidth ? 0.92 : 0.24);
+  // Sur grand écran, l'échiquier tient dans la hauteur de la fenêtre ; sur mobile, dans la largeur.
+  // Taille arrondie à un multiple de 8 pour que les cases tombent sur des pixels entiers
+  @HostListener('window:resize')
+  public setBoardSize(): void {
+    const wide = window.innerWidth >= 1000;
+    const size = wide
+      ? Math.min(window.innerHeight - 250, window.innerWidth * 0.38, 560)
+      : Math.min(window.innerWidth - 80, 560);
+    this.size = Math.max(Math.floor(size / 8) * 8, 240);
     this.cdr.detectChanges();
+  }
+
+  // Flèches du clavier : ← revient d'un coup, → joue le coup conseillé
+  @HostListener('window:keydown', ['$event'])
+  public onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'ArrowLeft') {
+      this.loadPreviousPosition();
+    } else if (event.key === 'ArrowRight') {
+      this.loadNextPosition();
+    }
+  }
+
+  public flipBoard(): void {
+    this.boardManager.reverse();
+    this.reversed.update((reversed) => !reversed);
+  }
+
+  // Centre d'une case (ex. "e4") dans un repère de 0 à 100, en tenant compte du sens de l'échiquier
+  private squareCenter(square: string): { x: number; y: number } {
+    const file = square.charCodeAt(0) - 'a'.charCodeAt(0);
+    const rank = Number(square[1]) - 1;
+    const col = this.reversed() ? 7 - file : file;
+    const row = this.reversed() ? rank : 7 - rank;
+    return { x: col * 12.5 + 6.25, y: row * 12.5 + 6.25 };
   }
 
  
@@ -429,6 +519,7 @@ public selectNextMove(): void {
   // Joue un coup conseillé par le coach (notation UCI, ex. "e2e4") : l'échiquier relance ensuite l'analyse
   public playMove(uci: string): void {
     if (!this.isBoardLocked) {
+      this.previewMove.set(null);
       this.boardManager.move(uci);
     }
   }
@@ -468,6 +559,10 @@ public selectNextMove(): void {
 
   public setPgn(): void {
     this.boardManager.setPGN(this.pgn);
+    // setPGN() remet les blancs en bas (coup précédent, clic dans l'historique, Recommencer) : on garde le sens choisi par le joueur
+    if (this.reversed()) {
+      this.boardManager.reverse();
+    }
   }
 
 
