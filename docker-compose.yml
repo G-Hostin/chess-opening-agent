@@ -1,4 +1,15 @@
 services:
+  # Interface Angular, servie par nginx qui transmet aussi les appels /api au backend
+  frontend:
+    build: ./frontend
+    container_name: chess-frontend
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   backend:
     build: ./backend
     container_name: chess-backend
@@ -13,12 +24,37 @@ services:
     volumes:
       # Le modèle d'embedding n'est téléchargé qu'une fois
       - hf_cache:/root/.cache/huggingface
+    # L'API est prête quand la route healthcheck répond (curl n'est pas dans l'image, on passe par Python)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/healthcheck')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      start_interval: 5s
+      retries: 3
     depends_on:
+      indexer:
+        condition: service_completed_successfully
       milvus:
         condition: service_healthy
       mongo:
         condition: service_started
     restart: unless-stopped
+
+  # Charge les articles Wikichess dans Milvus au premier démarrage, puis s'arrête.
+  # Aux démarrages suivants, il voit que la collection est remplie et ne refait rien
+  indexer:
+    build: ./backend
+    container_name: chess-indexer
+    command: ["uv", "run", "python", "indexer.py"]
+    environment:
+      MILVUS_URI: http://milvus:19530
+    volumes:
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      milvus:
+        condition: service_healthy
+    restart: "no"
 
   # Classeur MongoDB : garde 30 jours les résultats YouTube déjà cherchés
   mongo:
