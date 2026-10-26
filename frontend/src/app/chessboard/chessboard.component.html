@@ -24,6 +24,20 @@
           <span class="app-title">Coach d'ouvertures</span>
           <span class="app-subtitle">Les coups des maîtres, l'avis du coach et des vidéos pour chaque position</span>
         </div>
+
+        <!-- Positions préparées pour la démonstration (demo-positions.ts) -->
+        <button mat-stroked-button class="demo-button" [matMenuTriggerFor]="demoMenu" aria-label="Positions de démo">
+          <mat-icon>auto_stories</mat-icon>
+          <span class="demo-button-text">Positions de démo</span>
+        </button>
+        <mat-menu #demoMenu="matMenu" xPosition="before">
+          @for (position of demoPositions; track position.label) {
+            <button mat-menu-item (click)="loadDemoPosition(position)">
+              <span class="demo-label">{{ position.label }}</span>
+              <span class="demo-description">{{ position.description }}</span>
+            </button>
+          }
+        </mat-menu>
       </mat-toolbar>
 
       <!-- Layout principal -->

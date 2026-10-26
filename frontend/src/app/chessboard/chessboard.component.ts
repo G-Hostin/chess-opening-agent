@@ -28,11 +28,13 @@ import { MarkdownModule } from 'ngx-markdown';
 
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatMenuModule } from '@angular/material/menu';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CoachFacade } from '../features/coach/coach.facade';
 import { Recommendations } from '../features/coach/components/recommendations/recommendations';
 import { VideoList } from '../features/coach/components/video-list/video-list';
 import { CoachExplanation } from '../features/coach/components/coach-explanation/coach-explanation';
+import { DEMO_POSITIONS, DemoPosition } from './demo-positions';
 
 
 // ========== INTERFACES ==========
@@ -74,6 +76,7 @@ interface BoardState {
     MarkdownModule,
     MatBadgeModule,
     MatTabsModule,
+    MatMenuModule,
     Recommendations,
     CoachExplanation,
     VideoList
@@ -117,6 +120,9 @@ export class ChessBoardComponent implements OnInit, AfterViewInit {
 
   // Échiquier retourné (les noirs en bas) : la flèche et la jauge doivent suivre
   reversed = signal(false);
+
+  // Positions du menu « Positions de démo »
+  demoPositions = DEMO_POSITIONS;
 
   // Coup survolé dans le panneau du coach (UCI, ex. "g1f3"), dessiné en flèche sur l'échiquier
   previewMove = signal<string | null>(null);
@@ -498,6 +504,13 @@ public selectNextMove(): void {
     } else if (event.key === 'ArrowRight') {
       this.loadNextPosition();
     }
+  }
+
+  // Rejoue les coups d'une position de démo depuis le départ. Le coach n'analyse que la dernière
+  // position : les positions intermédiaires arrivent en moins de 300 ms et sont ignorées
+  public loadDemoPosition(position: DemoPosition): void {
+    this.reset();
+    position.moves.forEach((uci) => this.boardManager.move(uci));
   }
 
   public flipBoard(): void {

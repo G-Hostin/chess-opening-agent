@@ -45,6 +45,27 @@
   white-space: normal;
 }
 
+// Bouton du menu des positions de démo, à droite de la barre
+.mat-toolbar .demo-button {
+  margin-left: auto;
+  border-color: rgb(255 255 255 / 0.5);
+  color: #fff;
+}
+
+// Chaque position du menu sur deux lignes : son nom, puis ce qu'elle permet de montrer
+.demo-label {
+  display: block;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.demo-description {
+  display: block;
+  color: var(--app-muted);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
 // Deux colonnes : l'échiquier à gauche, l'analyse à droite
 .adaptive-layout {
   display: grid;
@@ -264,7 +285,8 @@
     justify-self: center;
   }
 
-  .app-subtitle {
+  .app-subtitle,
+  .demo-button-text {
     display: none;
   }
 }
