@@ -52,7 +52,17 @@ npx ng serve
 
 L'interface est sur http://localhost:4200. En développement, Angular transmet les appels `/api` à l'API sur le port 8000 (fichier `proxy.conf.json`), il n'y a donc pas de CORS à régler côté API.
 
-À chaque coup joué, l'interface demande l'analyse de la nouvelle position à `/api/v1/analyze`. Si plusieurs coups s'enchaînent en moins de 300 ms, seule la dernière position est envoyée, et une analyse en cours est abandonnée quand la position change. Pendant le chargement, l'ancienne analyse reste affichée en grisé et ses coups ne sont plus cliquables. Un clic sur un coup proposé le joue sur l'échiquier. La jauge à gauche de l'échiquier n'apparaît que hors théorie, quand Stockfish a donné une évaluation.
+À chaque coup joué, l'interface demande l'analyse de la nouvelle position à `/api/v1/analyze`. Si plusieurs coups s'enchaînent en moins de 300 ms, seule la dernière position est envoyée, et une analyse en cours est abandonnée quand la position change. Pendant le chargement, l'ancienne analyse reste affichée en grisé et ses coups ne sont plus cliquables.
+
+Sur l'écran, on peut :
+
+- survoler un coup des maîtres, ou le meilleur coup de Stockfish, pour le voir en flèche sur l'échiquier, puis cliquer dessus pour le jouer
+- jouer le coup conseillé avec le bouton du même nom ou la flèche droite du clavier, et revenir en arrière avec la flèche gauche
+- revenir à un coup de la partie en cliquant dessus dans l'historique
+- retourner l'échiquier pour travailler une ouverture avec les noirs
+- lire la vidéo principale dans la page. Elle continue quand on joue un coup, et un clic sur une des deux autres vidéos la remplace
+
+La jauge à gauche de l'échiquier se remplit seulement hors théorie, quand Stockfish a donné une évaluation.
 
 ## Routes de l'API
 
