@@ -1,0 +1,54 @@
+@use '@angular/material' as mat;
+
+// Thème Angular Material 3 : vert pour les boutons et les accents, orange en couleur secondaire
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      primary: mat.$green-palette,
+      tertiary: mat.$orange-palette,
+      theme-type: light,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+// Couleurs de l'application, reprises dans tous les composants
+:root {
+  --app-bg: #f4f1ea;
+  --app-surface: #ffffff;
+  --app-border: #e3ddd2;
+  --app-text: #1f2421;
+  --app-muted: #5d655f;
+  --app-header: #1e3a2f;
+  --app-accent: #2e7d4f;
+  --app-accent-soft: #e5f2ea;
+  --app-warning: #8a5300;
+  --app-warning-soft: #fdf0d8;
+  --app-danger: #9b1c1c;
+  --app-danger-soft: #fdecea;
+  --app-radius: 12px;
+  --app-shadow: 0 1px 2px rgb(0 0 0 / 0.06), 0 4px 16px rgb(0 0 0 / 0.04);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+// Cartes de l'application : fond blanc, coins arrondis, ombre légère
+.mat-mdc-card.app-card {
+  background: var(--app-surface);
+  border-color: var(--app-border);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  padding: 16px 18px;
+}
